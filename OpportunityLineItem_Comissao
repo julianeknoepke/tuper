@@ -1,0 +1,80 @@
+/*******************************************************************************
+* Classe para calcular preço de tabela de cada item da oportunidade.
+* NAME: OpportunityLineItem_Preco.cls
+
+* Autor: Juliane Knoepke - data: 08/12/2017
+*******************************************************************************/
+
+
+public with sharing class OpportunityLineItem_Comissao {
+    
+    public static void executar (){
+        
+        TriggerUtils.assertTrigger();
+        
+        Map<String, OpportunityLineItem> mapaprodutodeOportunidade = new Map<String, OpportunityLineItem>();
+        
+        for(OpportunityLineItem produtodeOportunidade : (list<OpportunityLineItem>)trigger.new) {
+            if(produtodeOportunidade.Cotacao_Tubos_e_TOG__c) {
+                if((( Trigger.isInsert && CalcularComissaoTest.isInsert) ||
+                    ( Trigger.isUpdate && CalcularComissaoTest.isUpdate ))) continue;
+            
+            mapaProdutoDeOportunidade.put(produtoDeOportunidade.Id, produtoDeOportunidade);
+            }
+        }
+        
+        if( Trigger.isInsert ) CalcularComissaoTest.isInsert = true;
+        if( Trigger.isUpdate ) CalcularComissaoTest.isUpdate = true;
+        
+        for(OpportunityLineItem produtodeOportunidade : (list<OpportunityLineItem>)trigger.new) {
+            double comissao;
+            
+            if(produtodeOportunidade.Cotacao_Tubos_e_TOG__c) {
+                
+                if(!produtodeOportunidade.Calcular_Comissao__c){
+                    comissao = 0.00;
+                }
+                else if (produtodeOportunidade.Calcular_Comissao__c == true){
+                    
+                    if(produtodeOportunidade.Tipo_comiss_o__c == 'V. Interno'){
+                        comissao = 0.50;
+                    }
+                    
+                    if(produtodeOportunidade.Estabelecimento__c == '141'){
+                        if (produtodeOportunidade.Tipo_comiss_o__c == 'Fixo'|| 
+                           produtodeOportunidade.Tipo_comiss_o__c == 'Variável'){
+                               if (produtodeOportunidade.Familia_comercial__c == 'TLH' ||
+                                   produtodeOportunidade.Familia_comercial__c == 'TTA') {
+                                       comissao = 3.00;
+                                   }
+                               else comissao = 1.50;
+                           }
+                    }
+                    else if(produtodeOportunidade.Tipo_comiss_o__c == 'Fixo'){
+                        comissao = 1.50;
+                    }
+                    else if(produtodeOportunidade.Tipo_comiss_o__c == 'Variável'){
+                               double desconto = produtodeOportunidade.Dif_Pre_o_x_Pre_o_Tabela__c;
+                               
+                               if(desconto >= 15.00) {
+                                   comissao = 5.68 * (1-(produtodeOportunidade.ICMS__c/100));
+                               }
+                               else if((desconto >= 10.00) && (desconto < 15.00)) {
+                                   comissao = 3.41 * (1-(produtodeOportunidade.ICMS__c/100));
+                               }
+                               else if(desconto >= 5.00 && desconto < 10.00) {
+                                   comissao = 2.84 * (1-(produtodeOportunidade.ICMS__c/100));
+                               }
+                               else if (desconto >= 0.00 && desconto < 5.00) {
+                                   comissao= 2.56 * (1-(produtodeOportunidade.ICMS__c/100));
+                               }
+                               else if (desconto >= -1.50 && desconto < -3.00) {
+                                   comissao = 1.99 * (1-(produtodeOportunidade.ICMS__c/100));
+                               }
+                               else comissao = 1.42 * (1-(produtodeOportunidade.ICMS__c/100));
+                           }
+                }
+            } produtodeOportunidade.Percentual_de_comissao__c = comissao;
+        }
+    }
+}
